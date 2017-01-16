@@ -1,5 +1,4 @@
-__author__ = 'metjush'
-
+#coding: utf-8
 # Implementation of Classification Random Forest
 # ============================================
 # This Random Forest is built on the Classification Tree object implemented in ClassTree.py
@@ -17,16 +16,18 @@ from ClassTree import ClassificationTree
 from scipy import stats
 import warnings
 
+tree_nodes = list()
 
 class RandomForest:
 
-    def __init__(self, n_trees=50, depth_limit=None, sample_fraction=0.75, impurity="gini"):
+    def __init__(self, n_trees=50, depth_limit=None, sample_fraction=0.75, impurity="entropy"):
         self.n_trees = n_trees
         self.depth_limit = depth_limit if depth_limit in set({int, float, np.int64, np.float64}) else np.inf
         self.fraction = sample_fraction
         self.trees = [[]]*n_trees
         self.trained = False
         self.impurity = impurity
+
 
     def __untrain(self):
         self.trained = False
@@ -80,8 +81,13 @@ class RandomForest:
             tree.train(Xstrap,ystrap)
             # for each tree, need to save which features to use
             self.trees[t] = [tree, subfeature]
+            tree_nodes.extend(self.trees[t][1])
+            tree_nodes_2 = list(set(tree_nodes))
+        print len(tree_nodes_2)
+        print '节点数量'
         self.trained = True
         print("%d trees grown" % self.n_trees)
+        return tree_nodes_2
 
     def predict(self, X):
         if not self.trained:
@@ -95,7 +101,6 @@ class RandomForest:
             pred = tree.predict(subX)
             prediction_matrix[:,t] = pred
         final_vote = stats.mode(prediction_matrix, axis=1)[0]
-
         return final_vote.flatten()
 
     def evaluate(self, X, y, method='f1'):
