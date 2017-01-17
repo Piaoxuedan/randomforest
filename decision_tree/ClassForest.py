@@ -27,6 +27,8 @@ class RandomForest:
         self.trees = [[]]*n_trees
         self.trained = False
         self.impurity = impurity
+        self.treenodes = list()
+        self.treenodes_2 = list()
 
 
     def __untrain(self):
@@ -81,13 +83,14 @@ class RandomForest:
             tree.train(Xstrap,ystrap)
             # for each tree, need to save which features to use
             self.trees[t] = [tree, subfeature]
-            tree_nodes.extend(self.trees[t][1])
-            tree_nodes_2 = list(set(tree_nodes))
-        print len(tree_nodes_2)
+            self.treenodes.extend(self.trees[t][1])
+            self.treenodes_2 = list(set(self.treenodes))
+        print len(self.treenodes_2)
         print '节点数量'
         self.trained = True
         print("%d trees grown" % self.n_trees)
-        return tree_nodes_2
+
+        return self.treenodes_2
 
     def predict(self, X):
         if not self.trained:
