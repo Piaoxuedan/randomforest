@@ -14,12 +14,11 @@ import numpy as np
 
 
 if __name__ == "__main__":
-    #result_mat = np.zeros((5,12),dtype=np.int)
     all_nodes = list()
     for q in range(10):
         tree = ClassificationTree("entropy")
-        bag = TreeBagger(n_trees=15)
-        forest = RandomForest(n_trees=15)
+        bag = TreeBagger(n_trees=50)
+        forest = RandomForest(n_trees=50)
         dataset = genfromtxt('/Users/dan/Desktop/Data/N-train.csv', delimiter=',')[1:]
         train = np.array(dataset)
         target_list = genfromtxt('/Users/dan/Desktop/Data/target-2.csv', delimiter=',')[1:]
@@ -45,56 +44,54 @@ if __name__ == "__main__":
     print all_nodes_dic
     useful_feat = list()
     for feat,count in all_nodes_dic.iteritems():
-        if count>=5:
+        if count>5:
             useful_feat.append(feat)
 
-    #results = forest.predict(test)
-    #result_mat[0] = np.array(results)
+    result_mat = np.zeros((5,12),dtype=np.int)
+    for w in range(5):
+        tree = ClassificationTree("entropy")
+        bag = TreeBagger(n_trees=15)
+        forest = RandomForest(n_trees=15)
 
-    tree = ClassificationTree("entropy")
-    bag = TreeBagger(n_trees=15)
-    forest = RandomForest(n_trees=15)
+        dataset = genfromtxt('/Users/dan/Desktop/Data/N-train.csv', delimiter=',')[1:]
+        train_list = list()
+        print len(useful_feat)
+        print '特征长度'
+        for i in useful_feat:
+            train_list.append([x[i] for x in dataset])
+        train_pre = np.array(train_list)
+        train = np.array(mat(train_pre).T)
 
-    dataset = genfromtxt('/Users/dan/Desktop/Data/N-train.csv', delimiter=',')[1:]
-    train_list = list()
-    print len(useful_feat)
-    print '特征长度'
-    for i in useful_feat:
-        train_list.append([x[i] for x in dataset])
-    train_pre = np.array(train_list)
-    train = np.array(mat(train_pre).T)
+        target_list = genfromtxt('/Users/dan/Desktop/Data/target-2.csv',delimiter= ',')[1:]
+        target = np.array(target_list)
 
-    target_list = genfromtxt('/Users/dan/Desktop/Data/target-2.csv',delimiter= ',')[1:]
-    target = np.array(target_list)
+        test_dataset = genfromtxt('/Users/dan/Desktop/Data/N-test.csv', delimiter=',' )[1:]
+        test_list = list()
+        for i in useful_feat:
+            test_list.append([x[i] for x in test_dataset])
+        test_pre = np.array(test_list)
+        test = np.array(mat(test_pre).T)
 
-    test_dataset = genfromtxt('/Users/dan/Desktop/Data/N-test.csv', delimiter=',' )[1:]
-    test_list = list()
-    for i in useful_feat:
-        test_list.append([x[i] for x in test_dataset])
-    test_pre = np.array(test_list)
-    test = np.array(mat(test_pre).T)
+        tree.train(train,target)
+        #print("Accuracy of the simple tree on dataset is %f" % tree.evaluate(train, target))
 
-    tree.train(train,target)
-    #print("Accuracy of the simple tree on dataset is %f" % tree.evaluate(train, target))
+        tree.describe()
+        js = tree.to_json("test_json.json")
+        tree = tree.from_json("test_json.json")
+        tree.describe()
+        #print("Accuracy of the reloaded tree on iris dataset is %f" % tree.evaluate(train, target))
+        tree.cross_val(train, target, folds=5)
+        bag.train(train, target)
+        #print("Accuracy of the bagged forest on dataset is %f" % bag.evaluate(train, target))
+        bag.cross_val(train, target, folds=5)
 
-    tree.describe()
-    js = tree.to_json("test_json.json")
-    tree = tree.from_json("test_json.json")
-    tree.describe()
-    #print("Accuracy of the reloaded tree on iris dataset is %f" % tree.evaluate(train, target))
-    tree.cross_val(train, target, folds=5)
-    bag.train(train, target)
-    #print("Accuracy of the bagged forest on dataset is %f" % bag.evaluate(train, target))
-    bag.cross_val(train, target, folds=5)
-
-    # Random forest
-    forest.train(train, target)
-    print("Accuracy of the random forest on dataset is %f" % forest.evaluate(train, target))
-    results = forest.predict(test)
-    print results
+        # Random forest
+        forest.train(train, target)
+        print("Accuracy of the random forest on dataset is %f" % forest.evaluate(train, target))
+        results = forest.predict(test)
+        result_mat[w] = np.array(results)
 
     #result_mat[q+1] = np.array(results)
-    """
     results_final = list()
     for p in range(12):
         p_dict = dict()
@@ -107,10 +104,9 @@ if __name__ == "__main__":
         results_final.append(p_vote)
     print results_final
     print '最终结果'
-"""
 
     with open("/Users/dan/Desktop/Data/test-results.csv", "wb") as f:
         writer = csv.writer(f)
         writer.writerow(["ImageId", "Label"])
-        for i, predicted_digit in enumerate(results):
+        for i, predicted_digit in enumerate(results_final):
             writer.writerow((i + 1, int(predicted_digit)))
